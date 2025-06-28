@@ -9,9 +9,8 @@ import os
 app = FastAPI()
 
 origins = [
-    "http://localhost:3000",
     "https://robsonrvs1991.github.io",
-    "https://calculadora-rvs.up.railway.app"
+    "https://calculadora-rvs.up.railway.app",
 ]
 
 app.add_middleware(
