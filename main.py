@@ -1,13 +1,13 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 import requests
 from datetime import datetime, timedelta
-from fastapi.middleware.cors import CORSMiddleware
 import os
 
 app = FastAPI()
 
-# Permitir acesso do seu domínio frontend
 origins = [
     "http://localhost:3000",
     "https://robsonrvs1991.github.io",
@@ -22,8 +22,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Montar frontend estático em /static (não sobrescreve rotas da API)
-app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "calculadorawsfront"), html=True), name="static")
+# Montar frontend estático em /static para assets
+app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "calculadorawsfront")), name="static")
+
+# Servir index.html na raiz "/"
+@app.get("/")
+def raiz():
+    index_path = os.path.join(os.path.dirname(__file__), "calculadorawsfront", "index.html")
+    return FileResponse(index_path)
 
 SGS_BASE_URL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{serie}/dados"
 
