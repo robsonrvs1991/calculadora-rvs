@@ -12,7 +12,9 @@ app = FastAPI()
 # Liberação de CORS com regex + preflight
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https://.*(\.railway\.app|\.github\.io)$",
+    allow_origins=[
+        "https://robsonrvs1991.github.io"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
