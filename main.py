@@ -15,10 +15,11 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=origins,         # lista de domínios permitidos
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],          # pode ajudar em alguns casos
 )
 
 # Montar frontend estático em /static para assets

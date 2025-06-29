@@ -356,6 +356,30 @@
 
     window.onload = calcular;
   </script>
+    <script>
+  async function carregarIndices() {
+    try {
+      const response = await fetch('https://calculadora-rvs.up.railway.app/indices');
+      if (!response.ok) throw new Error('Erro ao buscar índices');
+      const dados = await response.json();
+
+      document.getElementById('selic').value = dados.selic || 0;
+      document.getElementById('cdi').value = dados.cdi * 100 || 0;
+      document.getElementById('ipca').value = dados.ipca * 100 || 0;
+      document.getElementById('tr').value = dados.tr || 0;
+
+      calcular(); // Recalcula após atualizar os valores
+    } catch (error) {
+      alert('Não foi possível atualizar os índices.');
+      console.error(error);
+    }
+  }
+
+  window.onload = function() {
+    carregarIndices();
+    calcular();
+  };
+  </script>
 </body>
 </html>
 
