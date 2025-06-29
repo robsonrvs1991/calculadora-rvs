@@ -1,15 +1,14 @@
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import os
 
 app = FastAPI()
 
-# Liberação de CORS com regex + preflight
+# Liberação de CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://robsonrvs1991.github.io"],
@@ -18,12 +17,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Rota extra para lidar com preflight OPTIONS
+# Preflight OPTIONS
 @app.options("/{rest_of_path:path}")
 async def preflight_handler(rest_of_path: str, request: Request):
     return {}
 
-# Servir index.html na raiz
+# Servir index.html
 @app.get("/", response_class=HTMLResponse)
 def raiz():
     index_path = os.path.join(os.path.dirname(__file__), "calculadorawsfront", "index.html")
@@ -33,10 +32,10 @@ def raiz():
     except FileNotFoundError:
         raise HTTPException(status_code=500, detail="index.html não encontrado.")
 
-# Montar arquivos estáticos
+# Arquivos estáticos
 app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "calculadorawsfront")), name="static")
 
-# Constantes de API
+# Constantes da API do Bacen
 SGS_BASE_URL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{serie}/dados"
 SERIES = {
     "selic": 432,
@@ -44,6 +43,10 @@ SERIES = {
     "ipca": 433,
     "tr": 189,
 }
+
+# Cache diário
+ultimo_fetch = None
+cache_indices = {}
 
 def fetch_serie(serie_id):
     hoje = datetime.now()
@@ -55,7 +58,7 @@ def fetch_serie(serie_id):
         "dataInicial": data_inicial,
         "dataFinal": data_final,
     }
-    resp = requests.get(url, params=params)
+    resp = requests.get(url, params=params, timeout=10)
     resp.raise_for_status()
     dados = resp.json()
     if dados:
@@ -64,24 +67,29 @@ def fetch_serie(serie_id):
 
 @app.get("/indices")
 def get_indices():
-    try:
-        selic = fetch_serie(SERIES["selic"])
-        cdi = fetch_serie(SERIES["cdi"])
-        ipca = fetch_serie(SERIES["ipca"])
-        tr = fetch_serie(SERIES["tr"])
+    global ultimo_fetch, cache_indices
+    hoje = date.today()
 
-        headers = {
+    if ultimo_fetch != hoje:
+        try:
+            cache_indices = {
+                "selic": fetch_serie(SERIES["selic"]),
+                "cdi": fetch_serie(SERIES["cdi"]),
+                "ipca": fetch_serie(SERIES["ipca"]),
+                "tr": fetch_serie(SERIES["tr"]),
+            }
+            ultimo_fetch = hoje
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Erro ao consultar API Bacen: {e}")
+
+    return JSONResponse(
+        content=cache_indices,
+        headers={
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Headers": "*",
             "Access-Control-Allow-Methods": "*"
         }
-
-        return JSONResponse(
-            content={"selic": selic, "cdi": cdi, "ipca": ipca, "tr": tr},
-            headers=headers
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    )
 
 @app.get("/indices/{indice}")
 def get_indice(indice: str):
@@ -91,10 +99,13 @@ def get_indice(indice: str):
         valor = fetch_serie(SERIES[indice])
         if valor is None:
             raise HTTPException(status_code=404, detail="Dados não encontrados")
-        response = JSONResponse(content={indice: valor})
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = "*"
-        return response
+        return JSONResponse(
+            content={indice: valor},
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Allow-Methods": "*"
+            }
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
