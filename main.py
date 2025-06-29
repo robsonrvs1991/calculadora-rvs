@@ -70,17 +70,16 @@ def get_indices():
         ipca = fetch_serie(SERIES["ipca"])
         tr = fetch_serie(SERIES["tr"])
 
-        response = JSONResponse(content={
-            "selic": selic,
-            "cdi": cdi,
-            "ipca": ipca,
-            "tr": tr,
-        })
-        # FORÇA O CORS FUNCIONAR
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = "*"
-        return response
+        headers = {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Methods": "*"
+        }
+
+        return JSONResponse(
+            content={"selic": selic, "cdi": cdi, "ipca": ipca, "tr": tr},
+            headers=headers
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
