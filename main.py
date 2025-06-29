@@ -8,6 +8,7 @@ import os
 
 app = FastAPI()
 
+# Liberação de CORS com regex
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"https://.*(\.railway\.app|\.github\.io)$",
@@ -16,32 +17,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Servir index.html
+# Servir index.html na raiz
 @app.get("/", response_class=HTMLResponse)
 def raiz():
+    index_path = os.path.join(os.path.dirname(__file__), "calculadorawsfront", "index.html")
     try:
-        with open("calculadorawsfront/index.html", "r", encoding="utf-8") as f:
+        with open(index_path, "r", encoding="utf-8") as f:
             return f.read()
     except FileNotFoundError:
         raise HTTPException(status_code=500, detail="index.html não encontrado.")
 
-# Serve arquivos estáticos (JS, CSS, etc.)
+# Montar arquivos estáticos
 app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "calculadorawsfront")), name="static")
 
-# Chamada simplificada de teste
-@app.get("/indices")
-def get_indices_teste():
-    return {"indice": 42}
-
-# API real para buscar os índices
+# Constantes de API
 SGS_BASE_URL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{serie}/dados"
 SERIES = {
     "selic": 432,
@@ -55,16 +44,31 @@ def fetch_serie(serie_id):
     data_inicial = (hoje - timedelta(days=30)).strftime("%d/%m/%Y")
     data_final = hoje.strftime("%d/%m/%Y")
     url = SGS_BASE_URL.format(serie=serie_id)
-    params = {"formato": "json", "dataInicial": data_inicial, "dataFinal": data_final}
+    params = {
+        "formato": "json",
+        "dataInicial": data_inicial,
+        "dataFinal": data_final,
+    }
     resp = requests.get(url, params=params)
     resp.raise_for_status()
     dados = resp.json()
-    return float(dados[-1]["valor"]) if dados else None
+    if dados:
+        return float(dados[-1]["valor"].replace(",", "."))
+    return None
 
 @app.get("/indices")
 def get_indices():
     try:
-        return {indice: fetch_serie(id_) for indice, id_ in SERIES.items()}
+        selic = fetch_serie(SERIES["selic"])
+        cdi = fetch_serie(SERIES["cdi"])
+        ipca = fetch_serie(SERIES["ipca"])
+        tr = fetch_serie(SERIES["tr"])
+        return {
+            "selic": selic,
+            "cdi": cdi,
+            "ipca": ipca,
+            "tr": tr,
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
