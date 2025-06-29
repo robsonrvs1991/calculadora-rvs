@@ -4,201 +4,207 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Calculadora de Renda Fixa com Gráficos</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  background: #f9f9f9;
-  color: #222;
-}
-
-h1 {
-  color: #4a148c;
-  margin: 1rem;
-  text-align: center;
-}
-
-.container {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 2rem;
-  padding: 1rem;
-  flex-wrap: nowrap;
-}
-
-.form-section {
-  background: #ede7f6;
-  padding: 1.5rem;
-  border-radius: 10px;
-  width: 420px;
-  flex-shrink: 0;
-}
-
-.chart-section {
-  flex-grow: 1;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 0 10px #ccc;
-  padding: 1rem;
-  max-width: 700px;
-}
-
-canvas {
-  width: 100% !important;
-  height: 400px !important;
-}
-
-label {
-  font-weight: bold;
-  display: block;
-  margin-top: 0.8rem;
-}
-
-input[type=number], select {
-  width: 100%;
-  padding: 0.4rem 0.6rem;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.period-controls {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.period-controls button {
-  width: 30px;
-  font-weight: bold;
-  font-size: 1.2rem;
-  cursor: pointer;
-}
-
-.btn-bar {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin: 1.5rem 0;
-}
-
-.btn-bar button {
-  background: #4a148c;
-  color: white;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-#resultado {
-  margin-top: 1rem;
-  font-size: 1rem;
-  background: #e1bee7;
-  padding: 1rem;
-  border-radius: 8px;
-}
-
-footer {
-  margin-top: 2rem;
-  text-align: center;
-  font-weight: bold;
-  font-size: 1rem;
-  color: #4a148c;
-}
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f9f9f9;
+    color: #222;
+  }
+  h1 {
+    color: #4a148c;
+    margin: 1rem;
+    text-align: center;
+  }
+  .container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 2rem;
+    padding: 1rem;
+    flex-wrap: wrap;
+  }
+  .form-section {
+    background: #ede7f6;
+    padding: 1.5rem;
+    border-radius: 10px;
+    width: 400px;
+    min-width: 300px;
+    max-width: 500px;
+    flex-shrink: 0;
+  }
+  .chart-section {
+    flex-grow: 1;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #ccc;
+    padding: 1rem;
+    width: 100%;
+    max-width: 900px;
+  }
+  canvas {
+    width: 100% !important;
+    height: 400px !important;
+  }
+  label {
+    font-weight: bold;
+    display: block;
+    margin-top: 0.8rem;
+  }
+  input[type=number], select {
+    width: 100%;
+    padding: 0.4rem 0.6rem;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  .checkboxes {
+    margin-top: 1rem;
+  }
+  .checkboxes label {
+    font-weight: normal;
+    display: flex;
+    align-items: center;
+    margin-top: 0.5rem;
+  }
+  .checkboxes input {
+    margin-right: 0.5rem;
+  }
+  .period-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.8rem;
+  }
+  .period-controls button {
+    width: 30px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    cursor: pointer;
+  }
+  .btn-bar {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    flex-wrap: wrap;
+  }
+  .btn-bar button {
+    background: #4a148c;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #resultado {
+    margin-top: 1rem;
+    font-size: 1rem;
+    background: #e1bee7;
+    padding: 1rem;
+    border-radius: 8px;
+    white-space: pre-line;
+    min-height: 60px;
+  }
+  footer {
+    margin-top: 2rem;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1rem;
+    color: #4a148c;
+  }
 </style>
 </head>
 <body>
 <h1>Calculadora de Renda Fixa com Gráficos</h1>
-
 <div class="btn-bar">
   <button onclick="calcular()">Calcular</button>
   <button onclick="exportarPDF()">Exportar PDF</button>
   <button onclick="exportarXLSX()">Exportar Excel</button>
 </div>
-
-<div id="resultado" class="result">Calculando...</div>
-<canvas id="graficoInvestimentos" height="400"></canvas>
-
+<div class="container">
+  <div class="form-section">
+    <label>Investimento inicial (R$)</label>
+    <input type="number" id="investimentoInicial" value="1000" />
+    <label>Aportes mensais (R$)</label>
+    <input type="number" id="aportesMensais" value="240" />
+    <label>Período da aplicação</label>
+    <div class="period-controls">
+      <button type="button" onclick="document.getElementById('periodo').stepDown()">&minus;</button>
+      <input type="number" id="periodo" value="24" style="width: 60px; text-align:center;" />
+      <button type="button" onclick="document.getElementById('periodo').stepUp()">+</button>
+      <span>meses</span>
+    </div>
+    <label>Selic efetiva (a.a.)</label><input type="number" id="selic" value="14.9" />
+    <label>CDI (a.a.)</label><input type="number" id="cdi" value="14.9" />
+    <label>IPCA (a.a.)</label><input type="number" id="ipca" value="4.69" />
+    <label>TR (a.m.)</label><input type="number" id="tr" value="0.1739" />
+    <label>Juro nominal do Tesouro Prefixado (a.a.)</label><input type="number" id="tesouroNominal" value="14.0" />
+    <label>Taxa de custódia da B3 (a.a.)</label><input type="number" id="taxaCustodia" value="0.2" />
+    <label>Juro real do Tesouro IPCA+ (a.a.)</label><input type="number" id="tesouroIPCA" value="6.5" />
+    <label>Taxa de administração do Fundo DI (a.a.)</label><input type="number" id="taxaAdm" value="0.25" />
+    <label>Rentabilidade do CDB (% do CDI)</label><input type="number" id="pctCDB" value="100" />
+    <label>Rentabilidade do Fundo DI (% do CDI)</label><input type="number" id="pctFundo" value="85" />
+    <label>Rentabilidade da LCI/LCA (% do CDI)</label><input type="number" id="pctLCI" value="98.17" />
+    <label>Rentabilidade da Poupança (a.m.)</label><input type="number" id="rentPoupanca" value="0.6748" />
+    <div class="checkboxes">
+      <label><input type="checkbox" id="cbCDB" checked />CDB</label>
+      <label><input type="checkbox" id="cbLCI" checked />LCI/LCA</label>
+      <label><input type="checkbox" id="cbTesouro" checked />Tesouro Prefixado</label>
+    </div>
+    <p><small>Esses são os parâmetros padrões utilizados na sua simulação. Você pode alterá-los e refazer os cálculos para uma simulação avançada.</small></p>
+  </div>
+  <div class="chart-section">
+    <canvas id="graficoInvestimentos" height="400"></canvas>
+    <div id="resultado">Clique em calcular para iniciar a simulação.</div>
+  </div>
+</div>
 <footer>
   Criado por <strong>rvs</strong>
 </footer>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-<script>
-function exportarPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.text("Simulação de Investimento", 10, 10);
-  let y = 20;
-  document.querySelectorAll('#resultado p').forEach(p => {
-    doc.text(p.textContent, 10, y);
-    y += 10;
-  });
-  doc.save("simulacao.pdf");
-}
-
-function exportarXLSX() {
-  const ws_data = [["Produto", "Valor Final"]];
-  document.querySelectorAll('#resultado p').forEach(p => {
-    const [nome, valor] = p.textContent.split(':');
-    ws_data.push([nome.trim(), valor.trim()]);
-  });
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet(ws_data);
-  XLSX.utils.book_append_sheet(wb, ws, "Simulação");
-  XLSX.writeFile(wb, "simulacao.xlsx");
-}
-</script>
+<script src="calculadora-logica.js"></script>
 </body>
 </html>
 <script>
-  async function calcular() {
-    const apiUrl = getApiBaseUrl() + "/calcular";
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        valorInicial: 1000,
-        taxaJuros: 0.05,
-        periodo: 12
-      })
-    });
-    const data = await response.json();
-    document.getElementById("resultado").innerHTML = `
-      <p>Valor Final: R$ ${data.valorFinal.toFixed(2)}</p>
-      <p>Rendimento Total: R$ ${data.rendimentoTotal.toFixed(2)}</p>
-    `;
-    renderizarGrafico(data);
-  }
+  // Função para calcular os investimentos e atualizar o gráfico
+  function calcular() {
+    const investimentoInicial = parseFloat(document.getElementById('investimentoInicial').value);
+    const aportesMensais = parseFloat(document.getElementById('aportesMensais').value);
+    const periodo = parseInt(document.getElementById('periodo').value);
+    const selic = parseFloat(document.getElementById('selic').value) / 100;
+    const cdi = parseFloat(document.getElementById('cdi').value) / 100;
+    const ipca = parseFloat(document.getElementById('ipca').value) / 100;
+    const tr = parseFloat(document.getElementById('tr').value) / 100;
+    const tesouroNominal = parseFloat(document.getElementById('tesouroNominal').value) / 100;
+    const taxaCustodia = parseFloat(document.getElementById('taxaCustodia').value) / 100;
+    const tesouroIPCA = parseFloat(document.getElementById('tesouroIPCA').value) / 100;
+    const taxaAdm = parseFloat(document.getElementById('taxaAdm').value) / 100;
+    const pctCDB = parseFloat(document.getElementById('pctCDB').value) / 100;
+    const pctFundo = parseFloat(document.getElementById('pctFundo').value) / 100;
+    const pctLCI = parseFloat(document.getElementById('pctLCI').value) / 100;
+    const rentPoupanca = parseFloat(document.getElementById('rentPoupanca').value) / 100;
 
-  function renderizarGrafico(data) {
-    const ctx = document.getElementById("graficoInvestimentos").getContext("2d");
-    new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: data.meses,
-        datasets: [{
-          label: "Valor Acumulado",
-          data: data.valoresAcumulados,
-          borderColor: "#4a148c",
-          backgroundColor: "rgba(74, 20, 140, 0.1)",
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: true }
-        }
-      }
+    // Chama a função de cálculo definida no arquivo JS externo
+    calcularInvestimentos({
+      investimentoInicial,
+      aportesMensais,
+      periodo,
+      selic,
+      cdi,
+      ipca,
+      tr,
+      tesouroNominal,
+      taxaCustodia,
+      tesouroIPCA,
+      taxaAdm,
+      pctCDB,
+      pctFundo,
+      pctLCI,
+      rentPoupanca
     });
-  } 
+  }
