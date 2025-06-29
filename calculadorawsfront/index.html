@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculadora de Renda Fixa com Gráficos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 1.5rem;
+      background: #f9f9f9;
+      color: #222;
+    }
+    h1 {
+      color: #4a148c;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill,minmax(220px,1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+    input[type=number], select {
+      width: 100%;
+      padding: 0.4rem 0.6rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .info-box {
+      background: white;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.05);
+    }
+    .info-title {
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+      color: #4a148c;
+    }
+    .period-controls {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .period-controls button {
+      width: 30px;
+      font-weight: bold;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+    .result {
+      background: #e1bee7;
+      padding: 1rem 1.2rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: #2e0854;
+      margin-bottom: 2rem;
+    }
+    footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-weight: bold;
+      font-size: 1rem;
+      color: #4a148c;
+    }
+    canvas {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Calculadora de Renda Fixa com Gráficos</h1>
+
+  <!-- ... aqui você mantém o restante do seu HTML ... -->
+
+  <footer>
+    Criado por <strong>rvs</strong>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    function incrementPeriodo() {
+      const periodoInput = document.getElementById('periodo');
+      periodoInput.value = parseInt(periodoInput.value || '0') + 1;
+      calcular();
+    }
+
+    function decrementPeriodo() {
+      const periodoInput = document.getElementById('periodo');
+      if (periodoInput.value > 0) {
+        periodoInput.value = parseInt(periodoInput.value) - 1;
+        calcular();
+      }
+    }
+
+    function valorFinalComAportes(P, A, i, n) {
+      if (i === 0) return P + A * n;
+      return P * Math.pow(1 + i, n) + A * (Math.pow(1 + i, n) - 1) / i;
+    }
+
+    function getApiBaseUrl() {
+      if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+        return "http://localhost:8080";
+      }
+      return "https://calculadora-rvs.up.railway.app";
+    }
+
+    async function carregarIndices() {
+      try {
+        const baseUrl = getApiBaseUrl();
+        const response = await fetch(`${baseUrl}/indices`);
+        if (!response.ok) throw new Error('Erro ao buscar índices');
+        const dados = await response.json();
+
+        document.getElementById('selic').value = dados.selic ?? 0;
+        document.getElementById('cdi').value = (dados.cdi ?? 0) * 100;
+        document.getElementById('ipca').value = (dados.ipca ?? 0) * 100;
+        document.getElementById('tr').value = dados.tr ?? 0;
+
+        calcular();
+      } catch (error) {
+        alert('Não foi possível atualizar os índices.');
+        console.error(error);
+      }
+    }
+
+    function calcular() {
+      // ... insira aqui a função calcular que você já possui corretamente ...
+    }
+
+    window.onload = function () {
+      carregarIndices();
+    };
+  </script>
+</body>
+</html>
