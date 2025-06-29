@@ -1,21 +1,14 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 import requests
 from datetime import datetime, timedelta
 import os
 
 app = FastAPI()
 
-@app.get("/", response_class=HTMLResponse)
-def raiz():
-    try:
-        with open("calculadorawsfront/index.html", "r", encoding="utf-8") as f:
-            return f.read()
-    except FileNotFoundError:
-        raise HTTPException(status_code=500, detail="index.html não encontrado.")
-
+# Liberar frontend
 origins = [
     "http://localhost:3000",
     "http://localhost:8080",
@@ -27,27 +20,31 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # Ou use ["*"] para liberar tudo (não recomendado em produção)
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Servir index.html na raiz
+@app.get("/", response_class=HTMLResponse)
+def raiz():
+    try:
+        with open("calculadorawsfront/index.html", "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="index.html não encontrado.")
+
+# Servir arquivos estáticos (se usar CSS/JS externos)
+app.mount("/static", StaticFiles(directory="calculadorawsfront"), name="static")
+
+# Chamada simplificada de teste
 @app.get("/indices")
-def get_indices():
+def get_indices_teste():
     return {"indice": 42}
 
-# Montar frontend estático em /static para assets
-app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "calculadorawsfront")), name="static")
-
-# Servir index.html na raiz "/"
-@app.get("/")
-def raiz():
-    index_path = os.path.join(os.path.dirname(__file__), "calculadorawsfront", "index.html")
-    return FileResponse(index_path)
-
+# API real para buscar os índices
 SGS_BASE_URL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{serie}/dados"
-
 SERIES = {
     "selic": 432,
     "cdi": 12,
@@ -60,32 +57,16 @@ def fetch_serie(serie_id):
     data_inicial = (hoje - timedelta(days=30)).strftime("%d/%m/%Y")
     data_final = hoje.strftime("%d/%m/%Y")
     url = SGS_BASE_URL.format(serie=serie_id)
-    params = {
-        "formato": "json",
-        "dataInicial": data_inicial,
-        "dataFinal": data_final,
-    }
+    params = {"formato": "json", "dataInicial": data_inicial, "dataFinal": data_final}
     resp = requests.get(url, params=params)
     resp.raise_for_status()
     dados = resp.json()
-    if dados:
-        return float(dados[-1]["valor"])
-    else:
-        return None
+    return float(dados[-1]["valor"]) if dados else None
 
 @app.get("/indices")
 def get_indices():
     try:
-        selic = fetch_serie(SERIES["selic"])
-        cdi = fetch_serie(SERIES["cdi"])
-        ipca = fetch_serie(SERIES["ipca"])
-        tr = fetch_serie(SERIES["tr"])
-        return {
-            "selic": selic,
-            "cdi": cdi,
-            "ipca": ipca,
-            "tr": tr,
-        }
+        return {indice: fetch_serie(id_) for indice, id_ in SERIES.items()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
