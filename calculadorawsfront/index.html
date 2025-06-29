@@ -67,6 +67,20 @@
     color: #2e0854;
     margin-bottom: 2rem;
   }
+  .btn-bar {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .btn-bar button {
+    background: #4a148c;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
   footer {
     margin-top: 3rem;
     text-align: center;
@@ -82,64 +96,43 @@
 </style>
 </head>
 <body>
-<button onclick="calcularInvestimento()">Calcular</button>
-<button onclick="exportarPDF()">Exportar PDF</button>
-<button onclick="exportarXLSX()">Exportar Excel</button>
+<h1>Calculadora de Renda Fixa com Gráficos</h1>
 
-<div id="resultado"></div>
-<canvas id="grafico" width="400" height="200"></canvas>
+<div class="btn-bar">
+  <button onclick="calcular()">Calcular</button>
+  <button onclick="exportarPDF()">Exportar PDF</button>
+  <button onclick="exportarXLSX()">Exportar Excel</button>
+</div>
+
+<div id="resultado" class="result">Calculando...</div>
+<canvas id="graficoInvestimentos" height="400"></canvas>
+
+<footer>
+  Criado por <strong>rvs</strong>
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
-function calcularInvestimento() {
-  const aporteMensal = parseFloat(document.getElementById("aporte").value) || 0;
-  const investimentoInicial = parseFloat(document.getElementById("inicial").value) || 0;
-  const meses = parseInt(document.getElementById("periodo").value) || 12;
-  const taxa = 1.3 / 100;
-
-  let valores = [];
-  let total = investimentoInicial;
-  for (let i = 0; i < meses; i++) {
-    total = total * (1 + taxa) + aporteMensal;
-    valores.push(total.toFixed(2));
-  }
-
-  document.getElementById("resultado").innerText = "Total final: R$ " + total.toFixed(2);
-
-  new Chart(document.getElementById("grafico"), {
-    type: 'line',
-    data: {
-      labels: Array.from({ length: meses }, (_, i) => `${i+1}º mês`),
-      datasets: [{
-        label: 'Evolução',
-        data: valores,
-        fill: false,
-        borderColor: 'blue',
-        tension: 0.1
-      }]
-    }
-  });
-
-  window.valoresExport = valores;
-}
-
 function exportarPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   doc.text("Simulação de Investimento", 10, 10);
-  window.valoresExport?.forEach((v, i) => {
-    doc.text(`${i + 1}º mês: R$ ${v}`, 10, 20 + i * 7);
+  let y = 20;
+  document.querySelectorAll('#resultado p').forEach(p => {
+    doc.text(p.textContent, 10, y);
+    y += 10;
   });
   doc.save("simulacao.pdf");
 }
 
 function exportarXLSX() {
-  const ws_data = [["Mês", "Valor"]];
-  window.valoresExport?.forEach((v, i) => {
-    ws_data.push([`${i + 1}`, parseFloat(v)]);
+  const ws_data = [["Produto", "Valor Final"]];
+  document.querySelectorAll('#resultado p').forEach(p => {
+    const [nome, valor] = p.textContent.split(':');
+    ws_data.push([nome.trim(), valor.trim()]);
   });
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(ws_data);
@@ -147,309 +140,5 @@ function exportarXLSX() {
   XLSX.writeFile(wb, "simulacao.xlsx");
 }
 </script>
-  <h1>Calculadora de Renda Fixa com Gráficos</h1>
-
-  <div class="grid">
-    <div>
-      <label for="investimentoInicial">Investimento inicial (R$)</label>
-      <input type="number" id="investimentoInicial" min="0" step="0.01" value="0" />
-    </div>
-    <div>
-      <label for="aportesMensais">Aportes mensais (R$)</label>
-      <input type="number" id="aportesMensais" min="0" step="0.01" value="0" />
-    </div>
-    <div>
-      <label for="periodo">Período da aplicação</label>
-      <div class="period-controls">
-        <button type="button" onclick="decrementPeriodo()">−</button>
-        <input type="number" id="periodo" min="0" step="1" value="12" style="width: 60px; text-align:center;" />
-        <button type="button" onclick="incrementPeriodo()">+</button>
-        <select id="periodoUnidade" onchange="calcular()">
-          <option value="meses" selected>meses</option>
-          <option value="anos">anos</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <div class="grid">
-    <div class="info-box">
-      <div class="info-title">Selic efetiva (a.a.)</div>
-      <input type="number" id="selic" step="0.01" value="14.90" onchange="calcular()" />
-    </div>
-    <div class="info-box">
-      <div class="info-title">CDI (a.a.)</div>
-      <input type="number" id="cdi" step="0.01" value="14.90" onchange="calcular()" />
-    </div>
-    <div class="info-box">
-      <div class="info-title">IPCA (a.a.)</div>
-      <input type="number" id="ipca" step="0.0001" value="4.69" onchange="calcular()" />
-    </div>
-    <div class="info-box">
-      <div class="info-title">TR (a.m.)</div>
-      <input type="number" id="tr" step="0.0001" value="0.1739" onchange="calcular()" />
-    </div>
-    <div class="info-box">
-      <div class="info-title">Juro nominal do Tesouro Prefixado (a.a.)</div>
-      <input type="number" id="tesouroPrefixado" step="0.01" value="14.00" onchange="calcular()" />
-    </div>
-    <div class="info-box">
-      <div class="info-title">Taxa de custódia da B3 no Tesouro Direto (a.a.)</div>
-      <input type="number" id="taxaCustodia" step="0.01" value="0.20" onchange="calcular()" />
-    </div>
-    <div class="info-box">
-      <div class="info-title">Juro real do Tesouro IPCA+ (a.a.)</div>
-      <input type="number" id="tesouroIPCA" step="0.01" value="6.50" onchange="calcular()" />
-    </div>
-    <div class="info-box">
-      <div class="info-title">Taxa de administração do Fundo DI (a.a.)</div>
-      <input type="number" id="taxaAdmFundoDI" step="0.01" value="0.25" onchange="calcular()" />
-    </div>
-    <div class="info-box">
-      <div class="info-title">Rentabilidade do CDB (% do CDI)</div>
-      <input type="number" id="rentCDB" step="0.01" value="100" onchange="calcular()" />
-    </div>
-    <div class="info-box">
-      <div class="info-title">Rentabilidade do Fundo DI (% do CDI)</div>
-      <input type="number" id="rentFundoDI" step="0.01" value="98.17" onchange="calcular()" />
-    </div>
-    <div class="info-box">
-      <div class="info-title">Rentabilidade da LCI/LCA (% do CDI)</div>
-      <input type="number" id="rentLCI" step="0.01" value="85" onchange="calcular()" />
-    </div>
-    <div class="info-box">
-      <div class="info-title">Rentabilidade da Poupança (a.m.)</div>
-      <input type="number" id="rentPoupanca" step="0.0001" value="0.6748" onchange="calcular()" />
-    </div>
-  </div>
-
-  <div class="result" id="resultado">Calculando...</div>
-
-  <canvas id="graficoInvestimentos" height="400"></canvas>
-
-  <footer>
-    Criado por <strong>rvs</strong>
-  </footer>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    function incrementPeriodo() {
-      const periodoInput = document.getElementById('periodo');
-      periodoInput.value = parseInt(periodoInput.value || '0') + 1;
-      calcular();
-    }
-    function decrementPeriodo() {
-      const periodoInput = document.getElementById('periodo');
-      if (periodoInput.value > 0) {
-        periodoInput.value = parseInt(periodoInput.value) - 1;
-        calcular();
-      }
-    }
-
-    function valorFinalComAportes(P, A, i, n) {
-      if (i === 0) return P + A * n;
-      return P * Math.pow(1 + i, n) + A * (Math.pow(1 + i, n) - 1) / i;
-    }
-
-    function calcular() {
-      // Inputs básicos
-      const investimentoInicial = parseFloat(document.getElementById('investimentoInicial').value) || 0;
-      const aportesMensais = parseFloat(document.getElementById('aportesMensais').value) || 0;
-      let periodo = parseInt(document.getElementById('periodo').value) || 0;
-      const unidade = document.getElementById('periodoUnidade').value;
-
-      if (unidade === 'anos') {
-        periodo *= 12;
-      }
-      if (periodo === 0) {
-        document.getElementById('resultado').innerHTML = 'Informe um período maior que zero.';
-        if (window.chartInvestimentos) {
-          window.chartInvestimentos.destroy();
-        }
-        return;
-      }
-
-      // Taxas anuais e mensais
-      const selic = parseFloat(document.getElementById('selic').value) / 100;
-      const cdi = parseFloat(document.getElementById('cdi').value) / 100;
-      const ipca = parseFloat(document.getElementById('ipca').value) / 100;
-      const tr = parseFloat(document.getElementById('tr').value) / 100;
-
-      const tesouroPrefixado = parseFloat(document.getElementById('tesouroPrefixado').value) / 100;
-      const taxaCustodia = parseFloat(document.getElementById('taxaCustodia').value) / 100;
-      const tesouroIPCA = parseFloat(document.getElementById('tesouroIPCA').value) / 100;
-      const taxaAdmFundoDI = parseFloat(document.getElementById('taxaAdmFundoDI').value) / 100;
-
-      const rentCDB = parseFloat(document.getElementById('rentCDB').value) / 100;
-      const rentFundoDI = parseFloat(document.getElementById('rentFundoDI').value) / 100;
-      const rentLCI = parseFloat(document.getElementById('rentLCI').value) / 100;
-      const rentPoupanca = parseFloat(document.getElementById('rentPoupanca').value) / 100;
-
-      // Converter taxas anuais para mensais compostas
-      const cdiMes = Math.pow(1 + cdi, 1/12) - 1;
-      const selicMes = Math.pow(1 + selic, 1/12) - 1;
-      const ipcaMes = Math.pow(1 + ipca, 1/12) - 1;
-      const trMes = tr; // TR já é mensal
-
-      // Taxa mensal líquidos descontando taxas e taxas de custódia aproximadas
-      // Tesouro Prefixado descontando taxa custódia (simplificado)
-      const tesouroPrefixadoMes = Math.pow(1 + tesouroPrefixado, 1/12) - 1 - taxaCustodia/12;
-      // Tesouro IPCA descontando taxa custódia
-      const tesouroIPCAMes = Math.pow(1 + tesouroIPCA + ipca, 1/12) - 1 - taxaCustodia/12;
-      // CDB
-      const cdbMes = cdiMes * rentCDB;
-      // Fundo DI descontando taxa adm
-      const fundoDIMes = cdiMes * rentFundoDI * (1 - taxaAdmFundoDI);
-      // LCI/LCA (isento IR, simplificado)
-      const lciMes = cdiMes * rentLCI;
-      // Poupança já mensal direto
-      const poupancaMes = rentPoupanca;
-
-      // Calcular valores finais
-      const vfCDB = valorFinalComAportes(investimentoInicial, aportesMensais, cdbMes, periodo);
-      const vfFundoDI = valorFinalComAportes(investimentoInicial, aportesMensais, fundoDIMes, periodo);
-      const vfLCI = valorFinalComAportes(investimentoInicial, aportesMensais, lciMes, periodo);
-      const vfPoupanca = valorFinalComAportes(investimentoInicial, aportesMensais, poupancaMes, periodo);
-      const vfTesouroPre = valorFinalComAportes(investimentoInicial, aportesMensais, tesouroPrefixadoMes, periodo);
-      const vfTesouroIPCA = valorFinalComAportes(investimentoInicial, aportesMensais, tesouroIPCAMes, periodo);
-
-      // Mostrar resultados formatados
-      function formatBRL(val) {
-        return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-      }
-
-      const resultadoHTML = `
-        <p><strong>Valor final estimado para o CDB:</strong> ${formatBRL(vfCDB)}</p>
-        <p><strong>Valor final estimado para o Fundo DI:</strong> ${formatBRL(vfFundoDI)}</p>
-        <p><strong>Valor final estimado para a LCI/LCA:</strong> ${formatBRL(vfLCI)}</p>
-        <p><strong>Valor final estimado para a Poupança:</strong> ${formatBRL(vfPoupanca)}</p>
-        <p><strong>Valor final estimado para Tesouro Prefixado:</strong> ${formatBRL(vfTesouroPre)}</p>
-        <p><strong>Valor final estimado para Tesouro IPCA+:</strong> ${formatBRL(vfTesouroIPCA)}</p>
-      `;
-
-      document.getElementById('resultado').innerHTML = resultadoHTML;
-
-      // Dados para gráfico
-      const labels = [];
-      const dataCDB = [];
-      const dataFundoDI = [];
-      const dataLCI = [];
-      const dataPoupanca = [];
-      const dataTesouroPre = [];
-      const dataTesouroIPCA = [];
-
-      for (let m = 0; m <= periodo; m++) {
-        labels.push(m);
-
-        dataCDB.push(valorFinalComAportes(investimentoInicial, aportesMensais, cdbMes, m));
-        dataFundoDI.push(valorFinalComAportes(investimentoInicial, aportesMensais, fundoDIMes, m));
-        dataLCI.push(valorFinalComAportes(investimentoInicial, aportesMensais, lciMes, m));
-        dataPoupanca.push(valorFinalComAportes(investimentoInicial, aportesMensais, poupancaMes, m));
-        dataTesouroPre.push(valorFinalComAportes(investimentoInicial, aportesMensais, tesouroPrefixadoMes, m));
-        dataTesouroIPCA.push(valorFinalComAportes(investimentoInicial, aportesMensais, tesouroIPCAMes, m));
-      }
-
-      // Criar gráfico ou atualizar
-      if(window.chartInvestimentos) {
-        window.chartInvestimentos.data.labels = labels;
-        window.chartInvestimentos.data.datasets[0].data = dataCDB;
-        window.chartInvestimentos.data.datasets[1].data = dataFundoDI;
-        window.chartInvestimentos.data.datasets[2].data = dataLCI;
-        window.chartInvestimentos.data.datasets[3].data = dataPoupanca;
-        window.chartInvestimentos.data.datasets[4].data = dataTesouroPre;
-        window.chartInvestimentos.data.datasets[5].data = dataTesouroIPCA;
-        window.chartInvestimentos.update();
-      } else {
-        const ctx = document.getElementById('graficoInvestimentos').getContext('2d');
-        window.chartInvestimentos = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels,
-            datasets: [
-              { label: 'CDB', data: dataCDB, borderColor: '#7b1fa2', fill: false },
-              { label: 'Fundo DI', data: dataFundoDI, borderColor: '#9c27b0', fill: false },
-              { label: 'LCI/LCA', data: dataLCI, borderColor: '#ba68c8', fill: false },
-              { label: 'Poupança', data: dataPoupanca, borderColor: '#ce93d8', fill: false },
-              { label: 'Tesouro Prefixado', data: dataTesouroPre, borderColor: '#6a1b9a', fill: false },
-              { label: 'Tesouro IPCA+', data: dataTesouroIPCA, borderColor: '#4a148c', fill: false },
-            ]
-          },
-          options: {
-            responsive: true,
-            scales: {
-              x: {
-                title: {
-                  display: true,
-                  text: 'Meses'
-                }
-              },
-              y: {
-                title: {
-                  display: true,
-                  text: 'Valor acumulado (R$)'
-                },
-                beginAtZero: true
-              }
-            },
-            plugins: {
-              legend: {
-                position: 'bottom',
-                labels: {
-                  boxWidth: 15,
-                  padding: 15,
-                }
-              },
-              tooltip: {
-                mode: 'index',
-                intersect: false,
-                callbacks: {
-                  label: function(context) {
-                    return context.dataset.label + ': ' + context.parsed.y.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-                  }
-                }
-              }
-            },
-            interaction: {
-              mode: 'nearest',
-              axis: 'x',
-              intersect: false
-            }
-          }
-        });
-      }
-    }
-
-      window.onload = function () {
-    carregarIndices();
-    calcular();
-  };
-
-  function getApiBaseUrl() {
-  if (
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1"
-  ) {
-    return "http://localhost:8080";
-  }
-  return "https://calculadora-rvs-production.up.railway.app";
-}
-
-  async function carregarIndices() {
-    try {
-      const baseUrl = getApiBaseUrl();
-      const response = await fetch(`${baseUrl}/indices`);
-      if (!response.ok) throw new Error('Erro ao buscar índices');
-      const dados = await response.json();
-
-      document.getElementById('selic').value = dados.selic || 0;
-      document.getElementById('cdi').value = (dados.cdi * 100).toFixed(4) || 0;
-      document.getElementById('ipca').value = (dados.ipca * 100).toFixed(4) || 0;
-      document.getElementById('tr').value = dados.tr || 0;
-
-      calcular();
-    } catch (error) {
-      alert('Não foi possível atualizar os índices automaticamente.');
-      console.error(error);
-    }
-  }
-</script>
+</body>
+</html>
