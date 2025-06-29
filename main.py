@@ -76,6 +76,10 @@ def get_indices():
             "ipca": ipca,
             "tr": tr,
         })
+        # FORÇA O CORS FUNCIONAR
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "*"
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -88,6 +92,10 @@ def get_indice(indice: str):
         valor = fetch_serie(SERIES[indice])
         if valor is None:
             raise HTTPException(status_code=404, detail="Dados não encontrados")
-        return {indice: valor}
+        response = JSONResponse(content={indice: valor})
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "*"
+        return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
