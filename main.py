@@ -8,7 +8,6 @@ import os
 
 app = FastAPI()
 
-from fastapi.middleware.cors import CORSMiddleware
 
 origins = [
     "http://localhost:3000",      # React ou outro frontend local
@@ -25,6 +24,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/indices")
+def get_indices():
+    return {"indice": 42}
 
 # Montar frontend estático em /static para assets
 app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "calculadorawsfront")), name="static")
