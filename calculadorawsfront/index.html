@@ -357,12 +357,10 @@
     window.onload = calcular;
 
     function getApiBaseUrl() {
-  // Se estiver rodando no localhost, use a URL local do backend
   if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-    return "http://localhost:8000";
+    return "http://localhost:8080";
   }
-  // Caso contrário, use a URL do backend deployado
-  return "https://calculadora-rvs.up.railway.app";
+  return "https://calculadora-rvs-production.up.railway.app";
 }
 
 async function carregarIndices() {
