@@ -8,12 +8,20 @@ import os
 
 app = FastAPI()
 
+@app.get("/", response_class=HTMLResponse)
+def raiz():
+    try:
+        with open("calculadorawsfront/index.html", "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="index.html não encontrado.")
 
 origins = [
-    "http://localhost:3000",      # React ou outro frontend local
-    "http://localhost:8080",      # se rodar frontend nessa porta
-    "http://127.0.0.1:8080",      # idem
+    "http://localhost:3000",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
     "https://robsonrvs1991.github.io",
+    "https://robsonrvs1991.github.io/calculadorawsfront",
     "https://calculadora-rvs.up.railway.app",
 ]
 
