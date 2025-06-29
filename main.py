@@ -8,14 +8,13 @@ import os
 
 app = FastAPI()
 
-origins = [
-    "http://localhost:3000",
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
-    "https://robsonrvs1991.github.io",
-    "https://robsonrvs1991.github.io/calculadorawsfront",
-    "https://calculadora-rvs-production.up.railway.app",
-]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"https://.*(\.railway\.app|\.github\.io)$",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.add_middleware(
     CORSMiddleware,
