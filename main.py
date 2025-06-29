@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
@@ -8,7 +8,7 @@ import os
 
 app = FastAPI()
 
-# Liberação de CORS com regex
+# Liberação de CORS com regex + preflight
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"https://.*(\.railway\.app|\.github\.io)$",
@@ -16,6 +16,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Rota extra para lidar com preflight OPTIONS
+@app.options("/{rest_of_path:path}")
+async def preflight_handler(rest_of_path: str, request: Request):
+    return {}
 
 # Servir index.html na raiz
 @app.get("/", response_class=HTMLResponse)
