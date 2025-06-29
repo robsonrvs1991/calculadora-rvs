@@ -1,3 +1,4 @@
+from fastapi.responses import JSONResponse
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -62,9 +63,6 @@ def fetch_serie(serie_id):
     return None
 
 @app.get("/indices")
-from fastapi.responses import JSONResponse
-
-@app.get("/indices")
 def get_indices():
     try:
         selic = fetch_serie(SERIES["selic"])
@@ -78,7 +76,6 @@ def get_indices():
             "ipca": ipca,
             "tr": tr,
         })
-        # Cabeçalho CORS manual (alternativa se middleware falhar)
         response.headers["Access-Control-Allow-Origin"] = "*"
         return response
     except Exception as e:
