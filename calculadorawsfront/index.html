@@ -354,68 +354,34 @@
       }
     }
 
-    window.onload = calcular;
+      window.onload = function () {
+    carregarIndices();
+    calcular();
+  };
 
-    function getApiBaseUrl() {
-  if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-    return "http://localhost:8080";
-  }
-  return "https://calculadora-rvs-production.up.railway.app";
-}
-
-async function carregarIndices() {
-  try {
-    const baseUrl = getApiBaseUrl();
-    const response = await fetch(`${baseUrl}/indices`);
-    if (!response.ok) throw new Error('Erro ao buscar índices');
-    const dados = await response.json();
-
-    document.getElementById('selic').value = dados.selic || 0;
-    document.getElementById('cdi').value = dados.cdi * 100 || 0;
-    document.getElementById('ipca').value = dados.ipca * 100 || 0;
-    document.getElementById('tr').value = dados.tr || 0;
-
-    calcular(); // Recalcula após atualizar os valores
-  } catch (error) {
-    alert('Não foi possível atualizar os índices.');
-    console.error(error);
-  }
-}
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    function getApiBaseUrl() {
-      if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-        return "http://localhost:8080";
-      }
-      return "https://calculadora-rvs-production.up.railway.app"; // Produção
+  function getApiBaseUrl() {
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      return "http://localhost:8080";
     }
+    return "https://calculadora-rvs-production.up.railway.app";
+  }
 
-    async function carregarIndices() {
-      try {
-        const baseUrl = getApiBaseUrl();
-        const response = await fetch(`${baseUrl}/indices`);
-        if (!response.ok) throw new Error('Erro ao buscar índices');
-        const dados = await response.json();
+  async function carregarIndices() {
+    try {
+      const baseUrl = getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/indices`);
+      if (!response.ok) throw new Error('Erro ao buscar índices');
+      const dados = await response.json();
 
-        document.getElementById('selic').value = dados.selic || 0;
-        document.getElementById('cdi').value = (dados.cdi * 100).toFixed(4) || 0;
-        document.getElementById('ipca').value = (dados.ipca * 100).toFixed(4) || 0;
-        document.getElementById('tr').value = dados.tr || 0;
+      document.getElementById('selic').value = dados.selic || 0;
+      document.getElementById('cdi').value = (dados.cdi * 100).toFixed(4) || 0;
+      document.getElementById('ipca').value = (dados.ipca * 100).toFixed(4) || 0;
+      document.getElementById('tr').value = dados.tr || 0;
 
-        calcular();
-      } catch (error) {
-        alert('Não foi possível atualizar os índices automaticamente.');
-        console.error(error);
-      }
-    }
-
-    window.onload = function () {
-      carregarIndices();
       calcular();
-    };
-  </script>
-</body>
-</html>
-
-
+    } catch (error) {
+      alert('Não foi possível atualizar os índices automaticamente.');
+      console.error(error);
+    }
+  }
+</script>
