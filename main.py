@@ -8,14 +8,13 @@ import os
 
 app = FastAPI()
 
-# Liberar frontend
 origins = [
     "http://localhost:3000",
     "http://localhost:8080",
     "http://127.0.0.1:8080",
     "https://robsonrvs1991.github.io",
     "https://robsonrvs1991.github.io/calculadorawsfront",
-    "https://calculadora-rvs.up.railway.app",
+    "https://calculadora-rvs-production.up.railway.app",
 ]
 
 app.add_middleware(
@@ -26,7 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Servir index.html na raiz
+# Servir index.html
 @app.get("/", response_class=HTMLResponse)
 def raiz():
     try:
@@ -35,8 +34,8 @@ def raiz():
     except FileNotFoundError:
         raise HTTPException(status_code=500, detail="index.html não encontrado.")
 
-# Servir arquivos estáticos (se usar CSS/JS externos)
-app.mount("/static", StaticFiles(directory="calculadorawsfront"), name="static")
+# Serve arquivos estáticos (JS, CSS, etc.)
+app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "calculadorawsfront")), name="static")
 
 # Chamada simplificada de teste
 @app.get("/indices")
