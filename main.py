@@ -62,18 +62,25 @@ def fetch_serie(serie_id):
     return None
 
 @app.get("/indices")
+from fastapi.responses import JSONResponse
+
+@app.get("/indices")
 def get_indices():
     try:
         selic = fetch_serie(SERIES["selic"])
         cdi = fetch_serie(SERIES["cdi"])
         ipca = fetch_serie(SERIES["ipca"])
         tr = fetch_serie(SERIES["tr"])
-        return {
+
+        response = JSONResponse(content={
             "selic": selic,
             "cdi": cdi,
             "ipca": ipca,
             "tr": tr,
-        }
+        })
+        # Cabeçalho CORS manual (alternativa se middleware falhar)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
