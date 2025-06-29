@@ -11,9 +11,11 @@ app = FastAPI()
 from fastapi.middleware.cors import CORSMiddleware
 
 origins = [
+    "http://localhost:3000",      # React ou outro frontend local
+    "http://localhost:8080",      # se rodar frontend nessa porta
+    "http://127.0.0.1:8080",      # idem
     "https://robsonrvs1991.github.io",
     "https://calculadora-rvs.up.railway.app",
-    "http://localhost:3000",
 ]
 
 app.add_middleware(
