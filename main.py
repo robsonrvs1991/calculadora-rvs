@@ -8,18 +8,20 @@ import os
 
 app = FastAPI()
 
+from fastapi.middleware.cors import CORSMiddleware
+
 origins = [
     "https://robsonrvs1991.github.io",
     "https://calculadora-rvs.up.railway.app",
+    "http://localhost:3000",
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,         # lista de domínios permitidos
+    allow_origins=origins,  # Ou use ["*"] para liberar tudo (não recomendado em produção)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],          # pode ajudar em alguns casos
 )
 
 # Montar frontend estático em /static para assets
