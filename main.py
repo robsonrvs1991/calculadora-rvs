@@ -76,7 +76,6 @@ def get_indices():
             "ipca": ipca,
             "tr": tr,
         })
-        response.headers["Access-Control-Allow-Origin"] = "*"
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
