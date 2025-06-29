@@ -142,3 +142,47 @@ function exportarXLSX() {
 </script>
 </body>
 </html>
+<script>
+  async function calcular() {
+    const apiUrl = getApiBaseUrl() + "/calcular";
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        valorInicial: 1000,
+        taxaJuros: 0.05,
+        periodo: 12
+      })
+    });
+    const data = await response.json();
+    document.getElementById("resultado").innerHTML = `
+      <p>Valor Final: R$ ${data.valorFinal.toFixed(2)}</p>
+      <p>Rendimento Total: R$ ${data.rendimentoTotal.toFixed(2)}</p>
+    `;
+    renderizarGrafico(data);
+  }
+
+  function renderizarGrafico(data) {
+    const ctx = document.getElementById("graficoInvestimentos").getContext("2d");
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: data.meses,
+        datasets: [{
+          label: "Valor Acumulado",
+          data: data.valoresAcumulados,
+          borderColor: "#4a148c",
+          backgroundColor: "rgba(74, 20, 140, 0.1)",
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: true }
+        }
+      }
+    });
+  } 
