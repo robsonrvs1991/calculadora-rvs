@@ -2,6 +2,7 @@ from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import requests
 from datetime import datetime, timedelta, date
 import os
@@ -35,7 +36,7 @@ def raiz():
         raise HTTPException(status_code=500, detail="index.html não encontrado.")
 
 # Arquivos estáticos
-app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "calculadorawsfront")), name="static")
+app.mount("/static", StaticFiles(directory="/home/robsonrvs/calculadorawsfront"), name="static")
 
 # Constantes da API do Bacen
 SGS_BASE_URL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{serie}/dados"
@@ -94,6 +95,37 @@ def get_indices():
     )
 
 @app.get("/indices/{indice}")
+# Classe de entrada para o cálculo
+class CalculoRequest(BaseModel):
+    investimento_inicial: float
+    aporte_mensal: float
+    meses: int
+    cdi: float
+    ipca: float
+    poupanca: float
+
+@app.post("/calcular")
+def calcular_rendimento(dados: CalculoRequest):
+    P = dados.investimento_inicial
+    A = dados.aporte_mensal
+    n = dados.meses
+
+    def calcula_montante(taxa_anual):
+        i = (1 + taxa_anual / 100) ** (1/12) - 1  # taxa mensal
+        montante_aportes = A * (((1 + i) ** n - 1) / i)
+        montante_total = P * (1 + i) ** n + montante_aportes
+        return round(montante_total, 2)
+
+    total_cdi = calcula_montante(dados.cdi)
+    total_ipca = calcula_montante(dados.ipca)
+    total_poupanca = calcula_montante(dados.poupanca * 12)  # a.m. → a.a.
+
+    return {
+        "total_cdi": total_cdi,
+        "total_ipca": total_ipca,
+        "total_poupanca": total_poupanca
+    }
+
 def get_indice(indice: str):
     if indice not in SERIES:
         raise HTTPException(status_code=404, detail="Índice não encontrado")
@@ -111,3 +143,34 @@ def get_indice(indice: str):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# Classe de entrada para o cálculo
+class CalculoRequest(BaseModel):
+    investimento_inicial: float
+    aporte_mensal: float
+    meses: int
+    cdi: float
+    ipca: float
+    poupanca: float
+
+@app.post("/calcular")
+def calcular_rendimento(dados: CalculoRequest):
+    P = dados.investimento_inicial
+    A = dados.aporte_mensal
+    n = dados.meses
+
+    def calcula_montante(taxa_anual):
+        i = (1 + taxa_anual / 100) ** (1/12) - 1  # taxa mensal
+        montante_aportes = A * (((1 + i) ** n - 1) / i)
+        montante_total = P * (1 + i) ** n + montante_aportes
+        return round(montante_total, 2)
+
+    total_cdi = calcula_montante(dados.cdi)
+    total_ipca = calcula_montante(dados.ipca)
+    total_poupanca = calcula_montante(dados.poupanca * 12)  # a.m. → a.a.
+
+    return {
+        "total_cdi": total_cdi,
+        "total_ipca": total_ipca,
+        "total_poupanca": total_poupanca
+    }
