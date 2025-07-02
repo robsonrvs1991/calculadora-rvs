@@ -2,9 +2,9 @@ from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 import requests
 from datetime import datetime, timedelta, date
+from pydantic import BaseModel
 import os
 
 app = FastAPI()
@@ -20,12 +20,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Preflight OPTIONS
 @app.options("/{rest_of_path:path}")
 async def preflight_handler(rest_of_path: str, request: Request):
     return {}
 
-# Servir index.html
 @app.get("/", response_class=HTMLResponse)
 def raiz():
     index_path = os.path.join(os.path.dirname(__file__), "calculadorawsfront", "index.html")
@@ -35,13 +33,9 @@ def raiz():
     except FileNotFoundError:
         raise HTTPException(status_code=500, detail="index.html não encontrado.")
 
-# Arquivos estáticos
-STATIC_DIR = os.path.join(os.path.dirname(__file__), "calculadorawsfront")
-if os.path.exists(STATIC_DIR):
-    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+# Arquivos estáticos (remover se não usar em produção)
+# app.mount("/static", StaticFiles(directory="/home/robsonrvs/calculadorawsfront"), name="static")
 
-
-# Constantes da API do Bacen
 SGS_BASE_URL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{serie}/dados"
 SERIES = {
     "selic": 432,
@@ -50,7 +44,6 @@ SERIES = {
     "tr": 189,
 }
 
-# Cache diário
 ultimo_fetch = None
 cache_indices = {}
 
@@ -75,7 +68,6 @@ def fetch_serie(serie_id):
 def get_indices():
     global ultimo_fetch, cache_indices
     hoje = date.today()
-
     if ultimo_fetch != hoje:
         try:
             cache_indices = {
@@ -88,23 +80,28 @@ def get_indices():
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Erro ao consultar API Bacen: {e}")
 
-    return JSONResponse(
-        content=cache_indices,
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "*",
-            "Access-Control-Allow-Methods": "*"
-        }
-    )
+    return JSONResponse(content=cache_indices)
 
 @app.get("/indices/{indice}")
-# Classe de entrada para o cálculo
+def get_indice(indice: str):
+    if indice not in SERIES:
+        raise HTTPException(status_code=404, detail="Índice não encontrado")
+    try:
+        valor = fetch_serie(SERIES[indice])
+        if valor is None:
+            raise HTTPException(status_code=404, detail="Dados não encontrados")
+        return JSONResponse(content={indice: valor})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Modelo atualizado
 class CalculoRequest(BaseModel):
     investimento_inicial: float
     aporte_mensal: float
     meses: int
     cdi: float
     ipca: float
+    juro_ipca: float  # novo campo para o juro real do tesouro IPCA+
     poupanca: float
 
 @app.post("/calcular")
@@ -114,17 +111,16 @@ def calcular_rendimento(dados: CalculoRequest):
     n = dados.meses
 
     def calcula_montante(taxa_anual):
-        i = (1 + taxa_anual / 100) ** (1/12) - 1  # taxa mensal
+        i = (1 + taxa_anual / 100) ** (1/12) - 1
         montante_aportes = A * (((1 + i) ** n - 1) / i)
         montante_total = P * (1 + i) ** n + montante_aportes
         return round(montante_total, 2)
 
-    # CDI e Poupança mantêm o cálculo direto
     total_cdi = calcula_montante(dados.cdi)
-    total_poupanca = calcula_montante(dados.poupanca * 12)  # mensal -> anual
+    total_poupanca = calcula_montante(dados.poupanca * 12)
 
-    # IPCA+ com juro real corretamente calculado
-    taxa_ipca_efetiva = ((1 + dados.ipca / 100) * (1 + dados.selic / 100) - 1)
+    # IPCA+ com juro real composto corretamente
+    taxa_ipca_efetiva = ((1 + dados.ipca / 100) * (1 + dados.juro_ipca / 100) - 1)
     i_ipca = (1 + taxa_ipca_efetiva) ** (1/12) - 1
     montante_ipca_aportes = A * (((1 + i_ipca) ** n - 1) / i_ipca)
     total_ipca = P * (1 + i_ipca) ** n + montante_ipca_aportes
@@ -134,53 +130,6 @@ def calcular_rendimento(dados: CalculoRequest):
         "total_ipca": round(total_ipca, 2),
         "total_poupanca": total_poupanca
     }
-
-
-def get_indice(indice: str):
-    if indice not in SERIES:
-        raise HTTPException(status_code=404, detail="Índice não encontrado")
-    try:
-        valor = fetch_serie(SERIES[indice])
-        if valor is None:
-            raise HTTPException(status_code=404, detail="Dados não encontrados")
-        return JSONResponse(
-            content={indice: valor},
-            headers={
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Headers": "*",
-                "Access-Control-Allow-Methods": "*"
-            }
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# Classe de entrada para o cálculo
-class CalculoRequest(BaseModel):
-    investimento_inicial: float
-    aporte_mensal: float
-    meses: int
-    cdi: float
-    ipca: float
-    poupanca: float
-
-@app.post("/calcular")
-def calcular_rendimento(dados: CalculoRequest):
-    P = dados.investimento_inicial
-    A = dados.aporte_mensal
-    n = dados.meses
-
-    def calcula_montante(taxa_anual):
-        i = (1 + taxa_anual / 100) ** (1/12) - 1  # taxa mensal
-        montante_aportes = A * (((1 + i) ** n - 1) / i)
-        montante_total = P * (1 + i) ** n + montante_aportes
-        return round(montante_total, 2)
-
-    total_cdi = calcula_montante(dados.cdi)
-    total_ipca = calcula_montante(dados.ipca)
-    total_poupanca = calcula_montante(dados.poupanca * 12)  # a.m. → a.a.
-
-    return {
-        "total_cdi": total_cdi,
-        "total_ipca": total_ipca,
-        "total_poupanca": total_poupanca
-    }
+@app.get("/favicon.ico", response_class=FileResponse)
+def favicon():
+    return FileResponse(os.path.join(os.path.dirname(__file__), "calculadorawsfront", "favicon.ico"))
