@@ -108,7 +108,6 @@ class CalculoRequest(BaseModel):
     poupanca: float
 
 @app.post("/calcular")
-@app.post("/calcular")
 def calcular_rendimento(dados: CalculoRequest):
     P = dados.investimento_inicial
     A = dados.aporte_mensal
