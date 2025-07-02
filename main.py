@@ -108,6 +108,7 @@ class CalculoRequest(BaseModel):
     poupanca: float
 
 @app.post("/calcular")
+@app.post("/calcular")
 def calcular_rendimento(dados: CalculoRequest):
     P = dados.investimento_inicial
     A = dados.aporte_mensal
@@ -119,15 +120,22 @@ def calcular_rendimento(dados: CalculoRequest):
         montante_total = P * (1 + i) ** n + montante_aportes
         return round(montante_total, 2)
 
+    # CDI e Poupança mantêm o cálculo direto
     total_cdi = calcula_montante(dados.cdi)
-    total_ipca = calcula_montante(dados.ipca)
-    total_poupanca = calcula_montante(dados.poupanca * 12)  # a.m. → a.a.
+    total_poupanca = calcula_montante(dados.poupanca * 12)  # mensal -> anual
+
+    # IPCA+ com juro real corretamente calculado
+    taxa_ipca_efetiva = ((1 + dados.ipca / 100) * (1 + dados.selic / 100) - 1)
+    i_ipca = (1 + taxa_ipca_efetiva) ** (1/12) - 1
+    montante_ipca_aportes = A * (((1 + i_ipca) ** n - 1) / i_ipca)
+    total_ipca = P * (1 + i_ipca) ** n + montante_ipca_aportes
 
     return {
         "total_cdi": total_cdi,
-        "total_ipca": total_ipca,
+        "total_ipca": round(total_ipca, 2),
         "total_poupanca": total_poupanca
     }
+
 
 def get_indice(indice: str):
     if indice not in SERIES:
