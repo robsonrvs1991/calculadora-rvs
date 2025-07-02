@@ -36,7 +36,10 @@ def raiz():
         raise HTTPException(status_code=500, detail="index.html não encontrado.")
 
 # Arquivos estáticos
-app.mount("/static", StaticFiles(directory="/home/robsonrvs/calculadorawsfront"), name="static")
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "calculadorawsfront")
+if os.path.exists(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
 
 # Constantes da API do Bacen
 SGS_BASE_URL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{serie}/dados"
